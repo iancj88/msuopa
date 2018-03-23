@@ -1,0 +1,26 @@
+Package: msuopa
+Type: Package
+Title: Utility Functions for the MSU OPA Team
+Version: 0.1.0
+Authors@R: person("Ian C", "Johnson", email = "ian.johnson@montana.edu",
+    role = c("aut", "cre"))
+Maintainer: Ian C Johnson <ian.johnson2@montana.edu>
+Description: A variety of functions serving as wrappers to allow for easier
+    data extraction, transformation, and loading. Primarily focused on HR 
+    related datasets. Requires the installation of Rtools on the machine
+    compiling the package. See https://cran.r-project.org/bin/windows/Rtools/
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
+Imports:
+    readxl,
+    DBI,
+    dplyr,
+    odbc,
+    magrittr,
+    stringr,
+    data.table,
+    lubridate,
+    openxlsx,
+    ROracle
