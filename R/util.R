@@ -141,6 +141,12 @@ compute_fiscal_year <- function(date) {
 #' @return the same dataset with a renamed column
 #' @export
 rename_column <- function(df, old_name, new_name) {
+  if (new_name %in% colnames(df)) {
+    warning("!!! New column name ",
+            new_name,
+            "already exists in the dataframe, ",
+            quote())
+  }
   colnames(df)[which(names(df) == old_name)] <- new_name
   return(df)
 }
