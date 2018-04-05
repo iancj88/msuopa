@@ -193,10 +193,8 @@ format_banner_date <- function(df_col) {
 #'
 #' @param gid_vec the vector of gids to add gids
 #'
-#' @return
+#' @return a vector of gids with appropriately placed preceeding '0's
 #' @export
-#'
-#' @examples
 pad_gid <- function(gid_vec) {
   gid_length <- 9
 

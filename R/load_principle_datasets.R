@@ -195,8 +195,6 @@ get_all_ee <- function(folderpath,
 #' files in the folder containing csv
 #'
 #' @return list of POSIXct dates contained in the input filenames
-#'
-#' @examples
 allee_dates_from_fnames <- function(file_list) {
   date_from_file_name <- gsub(" All Employees.txt", "", file_list)
   date_from_file_name <-  as.POSIXct(date_from_file_name, format = "%Y%m%d")
@@ -457,8 +455,6 @@ all_ee_col_types <- function(date) {
 #' @param df dataframe containing the all employees data
 #'
 #' @return the input dataframe with revised date formats
-#'
-#' @examples
 format_allEE_dates <- function(df) {
 
   date_cols <- c("Current Hire Date",
@@ -540,7 +536,7 @@ supplement_all_ee <- function(df) {
 #' most up-to-date ftvorgn table data directly from Banner. Requires Banner
 #' logon credentials.
 #'
-#' @return a dataframe containing all FTVORGN table variables. out of date rows
+#' @return a dataframe containing all FTVORGN table variables. Depreciated rows
 #' are removed leaving only the most recent record if more than one record
 #' exists for a single ftvorgn organization code
 #' @export
@@ -598,8 +594,6 @@ get_ftvorgn_data <- function() {
 #' @return a dataframe with a job-key and funding_dept, funding_college,
 #' funding_division
 #' @export
-#'
-#' @examples
 get_budget_org_hierarchy <- function(df,
                                      lbr_dist_org_col_name,
                                      lbr_dist_prcnt_col_name) {
@@ -675,7 +669,7 @@ get_budget_org_hierarchy <- function(df,
                           "funding_department" = budget_orgn_desc,
                           "funding_college" = College,
                           "funding_division" = Division)
-  df_out <- dplyr::distinct(df_out)
+  df_out <- dplyr::distinct(df_out, job_key, .keep_all = TRUE)
 
   # for each unique job in the dataframe (df),
   #   figure out which orgn provides the most funcding based on the value
@@ -787,6 +781,7 @@ get_pidm_gid_lu <- function() {
                             statement = pidm_id_qry)
   df <- rename_column(df,
                       old_name = "ID",
-                      new_name = "GID")
+                      new_name = "GID") %>%
+    dplyr::distinct(.keep_all = TRUE)
   return(df)
 }

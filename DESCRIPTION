@@ -23,4 +23,5 @@ Imports:
     data.table,
     lubridate,
     openxlsx,
-    ROracle
+    ROracle,
+    rstudioapi

@@ -28,11 +28,10 @@
 "emr_org_xwalk"
 
 #' The Longevity rate lookup file contains a sequence of integers from -1 to 100
-#' corresponding to the years of service. Each year of service has an Percent
-#' column which specifies the ammount of bonus given to the employee. The bonus
-#' ranges from 0 (no bonus) to .15 (15% bonus).
+#' corresponding to the years of service and associated longevity percent bonus.
 #'
-#' Has not changed since atleast 2005.
+#' Each year of service has a Percent column which specifies the amount of bonus given to the employee. The bonus
+#' ranges from 0 (no bonus) to .15 (15% bonus). Has not changed since at least 2005.
 #'
 #' @format A dataframe with 102 rows and 2 variables:
 #' \describe{

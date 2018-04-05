@@ -28,14 +28,11 @@ rates. Defaults to value found in the \code{date} column if unsupplied.}
 \value{
 The original dataframe with four new columns:
 \describe{
-  \item{years_of_service} {The total years of service as-of the last day of
-    the month of the as-of date}
-  \item{PercentToBase} {The percent bonus as a double i.e. no bonus
-  corresponds with a PercentToBase == 1. Derived from the LongevityBonus
-  Lookup table}
-  \item{BaseAndLongHourly} {The Hourly pay rate with longevity bonus}
-  \item{BaseAndLongAssgn} {The monthly pay rate with longevity bonus}
-  \item{BaseAndLongAnnual} {The annual salary with longevity bonus}
+\item{years_of_service}{The total years of service as-of the last day of the month of the as-of date}
+\item{PercentToBase}{The percent bonus as a double i.e. no bonus corresponds with a PercentToBase == 1. Derived from the LongevityBonus Lookup table}
+\item{BaseAndLongHourly}{The Hourly pay rate with longevity bonus}
+\item{BaseAndLongAssgn}{The monthly pay rate with longevity bonus}
+\item{BaseAndLongAnnual}{The annual salary with longevity bonus}
 }
 }
 \description{

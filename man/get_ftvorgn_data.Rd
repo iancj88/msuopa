@@ -7,7 +7,7 @@
 get_ftvorgn_data()
 }
 \value{
-a dataframe containing all FTVORGN table variables. out of date rows
+a dataframe containing all FTVORGN table variables. Depreciated rows
 are removed leaving only the most recent record if more than one record
 exists for a single ftvorgn organization code
 }
