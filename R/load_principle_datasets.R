@@ -1,7 +1,7 @@
 #' get_banner_snapshots
 #'
 #'
-#' @param year year overwhich snapshots will be pulled. For one date only, see
+#' @param year calendar year overwhich snapshots will be pulled. For one date only, see
 #' \code{debug_date}
 #' @param sql_file_name optional file name and path if an alternative sql query
 #' is needed. Defaults to OPA snapshot sql query.
@@ -13,6 +13,8 @@
 #' parameters
 #' @param include_leave an optional boolean value indicating whether or not to
 #' include LWOP and LWOP/WB (with Benefits) Jobs in the snapshot
+#' @param opt_banner_conn an active banner connection object typically derived
+#' from \code{get_banner_conn()}. If not provided will create a temp connection
 #'
 #' @return a list of snapshot query returns. The names of the list items specify
 #' the date on which query is set.
@@ -21,7 +23,8 @@ get_banner_snapshots <- function(year,
                                  sql_file_name,
                                  by = "week",
                                  debug_date,
-                                 include_leave = FALSE) {
+                                 include_leave = FALSE,
+                                 opt_banner_conn) {
 
   if (!missing(sql_file_name)) {
     # load the sql query file into a readable format to be passed to
@@ -51,6 +54,10 @@ get_banner_snapshots <- function(year,
                     x = sql_query)
 
 
+  if (missing(opt_banner_conn)) {
+    # make a banner connection
+    banner_con <- get_banner_conn()
+  } else banner_con <- opt_banner_conn
 
   # create a list of sequential dates contained in the given year starting with
   # January first (YYYY-01-01) to December 31st (YYYY-12-31)
@@ -66,8 +73,7 @@ get_banner_snapshots <- function(year,
                       MoreArgs = list(pattern = "AS_OF_DATE_HERE",
                                       x = sql_query))
 
-  # make a banner connection
-  banner_con <- get_banner_conn()
+
 
   # get a list of dataframes corresponding to the dates fed in as query
   # variables
@@ -151,7 +157,7 @@ get_all_ee <- function(folderpath,
   }
 
   # use data table fread (because it is fast) to load the csvs
-  loaded_data <- mapply(read_allee_csv,
+  loaded_data <- mapply(fread_allee_csv,
                         path = file_names_paths,
                         name = file_names_only,
                         SIMPLIFY = FALSE)
@@ -551,13 +557,20 @@ supplement_all_ee <- function(df) {
 #' most up-to-date ftvorgn table data directly from Banner. Requires Banner
 #' logon credentials.
 #'
+#' @param opt_banner_conn an active banner connection object typically derived
+#' from \code{get_banner_conn()}. If not provided will create a temp connection
+#'
 #' @return a dataframe containing all FTVORGN table variables. Depreciated rows
 #' are removed leaving only the most recent record if more than one record
 #' exists for a single ftvorgn organization code
 #' @export
-get_ftvorgn_data <- function() {
+get_ftvorgn_data <- function(opt_banner_conn) {
 
-  banner_con  <- get_banner_conn()
+  if (missing(opt_banner_conn)) {
+    # make a banner connection
+    banner_con <- get_banner_conn()
+  } else banner_con <- opt_banner_conn
+
   sql_qry <- "select * from FTVORGN"
   ftvorgn_data <- ROracle::dbGetQuery(banner_con,
                                       statement = sql_qry)

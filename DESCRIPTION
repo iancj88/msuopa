@@ -1,7 +1,7 @@
 Package: msuopa
 Type: Package
 Title: Utility Functions for the MSU OPA Team
-Version: 0.1.0
+Version: 0.3.0
 Authors@R: person("Ian C", "Johnson", email = "ian.johnson@montana.edu",
     role = c("aut", "cre"))
 Maintainer: Ian C Johnson <ian.johnson2@montana.edu>
@@ -24,4 +24,5 @@ Imports:
     lubridate,
     openxlsx,
     ROracle,
-    rstudioapi
+    rstudioapi,
+    data.table
