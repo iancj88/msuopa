@@ -599,7 +599,9 @@ get_ftvorgn_data <- function(opt_banner_conn) {
   ftvorgn_data_out <- dplyr::filter(ftvorgn_data, key %in% orgn_max_dates_keys,
                                     FTVORGN_STATUS_IND == "A",
                                     is.na(ftvorgn_data$FTVORGN_TERM_DATE) |
-                                      ftvorgn_data$FTVORGN_TERM_DATE > Sys.Date())
+                                      ftvorgn_data$FTVORGN_TERM_DATE > Sys.Date(),
+      # added nchg filter to try address duplicate org names. may break things?
+                                    !FTVORGN_NCHG_DATE < Sys.Date())
   return(ftvorgn_data_out)
 }
 
