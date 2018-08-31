@@ -15,5 +15,6 @@ fixed
 }
 \description{
 This function overwrites certain Org Hierarchy values for oddly formatted
-departments in the all employees report.
+departments in the all employees report. Will require revision post ATS
+implementation.
 }

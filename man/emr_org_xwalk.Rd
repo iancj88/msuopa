@@ -3,8 +3,8 @@
 \docType{data}
 \name{emr_org_xwalk}
 \alias{emr_org_xwalk}
-\title{The EMR Organization Lookup table contains the crosswalk between organization
-number, name, and higher-level organization known as 'EMROrg' and 'VPOrg.}
+\title{The OPA Employee snapshot sql query in a form to be executed on the Banner
+database.}
 \format{A dataframe with 2487 rows and 4 variables:
 \describe{
   \item{Dept Name}{The Name of the dept as defined in FTVORGN table}
@@ -15,11 +15,23 @@ number, name, and higher-level organization known as 'EMROrg' and 'VPOrg.}
   \item{VPOrg}{The VP Org which is a slightly more aggregated rollup compared
   to the EMROrg}
 }}
+\source{
+OPA Employee Access database
+The EMR Organization Lookup table contains the crosswalk between organization
+number, name, and higher-level organization known as 'EMROrg' and 'VPOrg.
+
+Requires regular updates as dept numbers/names change. Numbers and names are
+defined/governed by the Finance team.
+}
 \usage{
 emr_org_xwalk
 }
 \description{
-Requires regular updates as dept numbers/names change. Numbers and names are
-defined/governed by the Finance team.
+For readable formatting, replace /n with actual new lines characters and
+then remove all instances of escape characters ('/'). Requires
+'AS_OF_DATE_HERE' to be replaced with a valid character representation of
+a date in the form YYYY-MM-DD. Also requires JOB_STATUSES_HERE string to be
+replaced with a character vector comprised of atleast one value job status
+abbreviations i.e. 'A', 'B', 'L'.
 }
 \keyword{datasets}

@@ -4,18 +4,16 @@
 \alias{write_report}
 \title{write_report}
 \usage{
-write_report(df, output_name_path, sheetName, header_title)
+write_report(df, output_full_path_fname, opt_sheetName, opt_header_title)
 }
 \arguments{
 \item{df}{the dataframe to be output}
 
-\item{output_name_path}{the full name of the folder and file name to be
-exported}
+\item{output_full_path_fname}{the full name of the path and file name}
 
-\item{sheetName}{The string name of the excel sheet}
+\item{opt_sheetName}{the name of the sheet and table will}
 
-\item{header_title}{The string to be placed in the header title when printing
-the sheet}
+\item{opt_header_title}{the name of the header (only visible when printed)}
 }
 \description{
 Export a dataframe to an excel and csv file. Typically used to share

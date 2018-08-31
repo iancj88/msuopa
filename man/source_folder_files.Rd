@@ -8,7 +8,7 @@ source_folder_files(folder_path = "./R/")
 }
 \arguments{
 \item{folder_path}{The folder path containing the R files. By default, uses
-the ./R/ folder contained in teh working directory}
+the ./R/ folder contained in the working directory}
 }
 \value{
 Success message will be printed to terminal

@@ -14,7 +14,7 @@ the vector of year integers
 }
 \description{
 computes the fiscal year of a vector of dates based on the Montana State
-fiscal calendar (July 1 - June 30)
+fiscal calendar (July 1 - June 30).
 }
 \examples{
 dte_1 <- as.Date("2018-01-01")

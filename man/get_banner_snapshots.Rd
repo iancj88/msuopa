@@ -4,7 +4,8 @@
 \alias{get_banner_snapshots}
 \title{get_banner_snapshots}
 \usage{
-get_banner_snapshots(year, sql_file_name, by = "week", debug_date)
+get_banner_snapshots(year, sql_file_name, by = "week", debug_date,
+  include_leave = FALSE)
 }
 \arguments{
 \item{year}{year overwhich snapshots will be pulled. For one date only, see
@@ -13,13 +14,16 @@ get_banner_snapshots(year, sql_file_name, by = "week", debug_date)
 \item{sql_file_name}{optional file name and path if an alternative sql query
 is needed. Defaults to OPA snapshot sql query.}
 
+\item{by}{a character vector containing one of "day", "week", "month",
+"quarter", or "year". Alternatively, may be a numeric integer. Used to
+determine the date sequence from which the sql queries are built.}
+
 \item{debug_date}{an optional date used to specify a single date to run for
 a snapshot. Will supersede any values used in \code{year} or \code{by}
 parameters}
 
-\item{frequency}{a character vector containing one of "day", "week", "month",
-"quarter", or "year". Alternatively, may be a numeric integer. Used to
-determine the date sequence from which the sql queries are built.}
+\item{include_leave}{an optional boolean value indicating whether or not to
+include LWOP and LWOP/WB (with Benefits) Jobs in the snapshot}
 }
 \value{
 a list of snapshot query returns. The names of the list items specify

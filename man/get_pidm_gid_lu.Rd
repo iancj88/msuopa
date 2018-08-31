@@ -4,7 +4,18 @@
 \alias{get_pidm_gid_lu}
 \title{get_pidm_gid_lu}
 \usage{
-get_pidm_gid_lu()
+get_pidm_gid_lu(opt_banner_conn, opt_pidm_vec, opt_gid_vec)
+}
+\arguments{
+\item{opt_banner_conn}{if a banner connection has already been made, supply
+it here. Otherwise, this function will prompt for logon credentials for a
+one time use connection.}
+
+\item{opt_pidm_vec}{use this optional parameter to filter the underlying sql
+query. Useful for time-sensitive applications.}
+
+\item{opt_gid_vec}{use this optional parameter to filter the underlying sql
+query. Useful for time-sensitive applications.}
 }
 \value{
 a two column dataframe containing gids and corresponding pidms

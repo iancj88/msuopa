@@ -5,12 +5,14 @@
 #' \code{debug_date}
 #' @param sql_file_name optional file name and path if an alternative sql query
 #' is needed. Defaults to OPA snapshot sql query.
-#' @param frequency a character vector containing one of "day", "week", "month",
+#' @param by a character vector containing one of "day", "week", "month",
 #' "quarter", or "year". Alternatively, may be a numeric integer. Used to
 #' determine the date sequence from which the sql queries are built.
 #' @param debug_date an optional date used to specify a single date to run for
 #' a snapshot. Will supersede any values used in \code{year} or \code{by}
 #' parameters
+#' @param include_leave an optional boolean value indicating whether or not to
+#' include LWOP and LWOP/WB (with Benefits) Jobs in the snapshot
 #'
 #' @return a list of snapshot query returns. The names of the list items specify
 #' the date on which query is set.
@@ -18,14 +20,16 @@
 get_banner_snapshots <- function(year,
                                  sql_file_name,
                                  by = "week",
-                                 debug_date) {
+                                 debug_date,
+                                 include_leave = FALSE) {
 
   if (!missing(sql_file_name)) {
     # load the sql query file into a readable format to be passed to
     # the database
     sql_query <- paste(readLines(sql_file_name), collapse = '\n')
   } else {
-    sql_query <- msuopa::snapshot_sql_query
+    #X:/Employees/All EEs Reports/r_package/AllEmployees/snapsht_qry.sql
+    sql_query <- msuopa::snapshot_sql_qry
   }
 
   good_frequencies <- c("day", "week", "month", "quarter", "year")
@@ -35,6 +39,18 @@ get_banner_snapshots <- function(year,
             '--Defaulting to "month".\n',
             "--Acceptable values include:", good_frequencies)
   }
+  # insert the appropriate job statuses. must be properly quoted i.e. 'A' or
+  #   'A','L','B'
+  if (include_leave == TRUE) {
+    acceptable_job_status <- c("'A', 'L', 'B'")
+  } else {
+    acceptable_job_status <- c("'A'")
+  }
+  sql_query <- gsub(pattern = "JOB_STATUSES_HERE", #vector of acceptable job statuses
+                    replacement = acceptable_job_status,
+                    x = sql_query)
+
+
 
   # create a list of sequential dates contained in the given year starting with
   # January first (YYYY-01-01) to December 31st (YYYY-12-31)
@@ -213,7 +229,7 @@ allee_dates_from_fnames <- function(file_list) {
 #' @return an unnamed dataframe containing the all employees data
 #'
 #' @seealso allee_dates_from_fnames, all_ee_col_types, get_all_ee
-read_allee_csv <- function(path, name) {
+fread_allee_csv <- function(path, name) {
   # compute the date of the file to determine the column types
   # contained in it. This date will be placed into it's own column
   # after it is read into a data.table
@@ -236,7 +252,6 @@ read_allee_csv <- function(path, name) {
   return(df)
 }
 
-# x -----------------------------------------------------------------------
 #' all_ee_col_types
 #'
 #' A named list of vectors of column names specifying their type as numeric or
@@ -540,7 +555,6 @@ supplement_all_ee <- function(df) {
 #' are removed leaving only the most recent record if more than one record
 #' exists for a single ftvorgn organization code
 #' @export
-
 get_ftvorgn_data <- function() {
 
   banner_con  <- get_banner_conn()
@@ -702,6 +716,10 @@ get_alt_org_hierarchy <- function() {
   return(alt_org_hierarchy)
 }
 
+get_full_org_hierarchy <- function() {
+  base_data <- get_ftvorgn_data()
+
+}
 
 #' get_race_data
 #'
@@ -734,7 +752,7 @@ get_race_data <- function(unique_pidms,
     race_file_path <- optional_race_file_path
   }
   start_time <- Sys.time()
-  race_conn <- get_access_conn(race_file_path)
+  race_conn <- msuopa::get_access_conn(race_file_path)
   race_tbl <- dplyr::tbl(race_conn, "IPEDS")
   if (!optional_return_all_cols) {
     race_tbl <- dplyr::select(race_tbl, PIDM, IPEDS_Code)
@@ -771,17 +789,251 @@ get_race_data <- function(unique_pidms,
 #' employee snapshot files. This dataset is comprehensive for every student and
 #' employee that has ever worked on campus while banner has been implemented
 #'
+#' @param opt_banner_conn if a banner connection has already been made, supply
+#'   it here. Otherwise, this function will prompt for logon credentials for a
+#'   one time use connection.
+#' @param opt_pidm_vec use this optional parameter to filter the underlying sql
+#'   query. Useful for time-sensitive applications.
+#' @param opt_gid_vec use this optional parameter to filter the underlying sql
+#'   query. Useful for time-sensitive applications.
+#'
 #' @return a two column dataframe containing gids and corresponding pidms
+#'
+#' @import magrittr
 #' @export
 #'
-get_pidm_gid_lu <- function() {
-  pidm_id_qry <- "SELECT spriden_pidm \"PIDM\",spriden_id \"ID\" FROM spriden"
-  bnr_conn <- get_banner_conn()
-  df <- ROracle::dbGetQuery(conn = bnr_conn,
-                            statement = pidm_id_qry)
-  df <- rename_column(df,
-                      old_name = "ID",
-                      new_name = "GID") %>%
+get_pidm_gid_lu <- function(opt_banner_conn, opt_pidm_vec, opt_gid_vec) {
+  # stop the function if both a gid and pidm vector is supplied for filtering
+  # purposes. it is likely possible to filter on both but will require further
+  # development.
+  if (!missing(opt_pidm_vec) & !missing(opt_gid_vec)) {
+    stop("function get_pidm_gid_lu supplied both a pidm and gid vector to filter.
+         Only one can be supplied at a time.")
+  }
+
+  # get a one-time use banner connection if one is not supplied as an input
+  # parameter
+  if (missing(opt_banner_conn)) {
+    bnr_conn <- msuopa::get_banner_conn()
+  } else {
+    bnr_conn <- opt_banner_conn
+  }
+
+  results <- dplyr::tbl(bnr_conn, "SPRIDEN") %>%
+    dplyr::select(SPRIDEN_PIDM, SPRIDEN_ID)
+  if (!missing(opt_gid_vec)) {
+    results <- dplyr::filter(results, SPRIDEN_ID %in% opt_gid_vec)
+  } else if (!missing(opt_pidm_vec)) {
+    results <- dplyr::filter(results, SPRIDEN_PIDM %in% opt_pidm_vec)
+  }
+
+  results <- results %>%
+    dplyr::collect() %>%
+    msuopa::rename_column(old_name = "ID",
+                          new_name = "GID") %>%
     dplyr::distinct(.keep_all = TRUE)
-  return(df)
+
+
+  return(results)
+
+  # This is an alternative method that utilizes dbplyr's automatic query creator
+  # gid_pidm_lu <- msuopa::get_banner_conn() %>%
+  #   tbl("SPRIDEN") %>%
+  #   select(SPRIDEN_PIDM, SPRIDEN_ID) %>%
+  #   collect() %>%
+  #   distinct(.keep_all = TRUE)
+  #
+  #   return(gid_pidm_lu)
 }
+
+
+#' get_payroll_data
+#'
+#' load payroll datafiles into a single dataframe
+#'
+#' @param opt_fpath an optional parameter if the payroll files are located in a non-default location
+#' @param opt_fpattern an optional regex pattern specifying which files to load
+#'
+#' @return a dataframe containing all payroll data
+#' @import data.table
+#' @export
+#'
+get_payroll_data <- function(opt_fpath,
+                             opt_fpattern) {
+  if (missing(opt_fpath)) {
+    fpath <- "X:/Employees/Payroll Earnings & Labor Distrubtion by Employee/"
+  } else {
+    fpath <- opt_fpath
+  }
+
+  if (missing(opt_fpattern)) {
+    fpattern <- "^2[0-9]{3}PR[0-9]{2}.txt"
+  } else {
+    fpattern <- opt_fpattern
+  }
+  file_list <- list.files(fpath)
+  file_path_list <- list.files(fpath, full.names = TRUE)
+
+  col_classes <- list(character = c("GID",
+                                    "Name",
+                                    "Position Number",
+                                    "Suffix",
+                                    "Earn Code",
+                                    "Earn Code Desc",
+                                    "Index",
+                                    "Activity Code",
+                                    "Organization"),
+                      numeric = c("Hours or Units",
+                                  "Amount",
+                                  "Percent"))
+
+  output <- lapply(file_path_list,
+                   FUN = data.table::fread,
+                   sep = ";",
+                   stringsAsFactors = FALSE,
+                   skip = 8,
+                   colClasses = col_classes,
+                   verbose = F)
+
+  names(output) <- gsub(pattern = ".txt",
+                        replacement = "",
+                        x = file_list)
+
+  output <- data.table::rbindlist(output,
+                                  idcol = "fname")
+
+  # add the year and payroll number as seperate columns. Currenly data is stored
+  # in the fname column in character type with the format "YYYYPR##"
+  output[, `PR Year` := as.numeric(substr(fname, 1, 4))][, PR := as.numeric(substr(fname, 7 ,8))]
+
+  # add a 'true' year and month that corrects for payroll being on the 11 day of
+  # the following month. PR 1 of 2018 truely represents work done in December,
+  # 2017
+  output[PR == 1, `True Month` := 12][PR != 1, `True Month` := PR - 1]
+  output[PR == 1, `True Year` := `PR Year` - 1][PR != 1, `True Year` := `PR Year`]
+
+  output <- data.table::setDF(output)
+
+  return(output)
+}
+
+
+
+#' get_address_data
+#'
+#' get the most up-to-date mailing and campus addresses for a group of pidms
+#'
+#' @param pidm_vec a vector of pidms to use a filter in the underlying sql
+#'   query, may have issues with excessively large vectors. Requires further
+#'   testing.
+#' @param opt_banner_connection if a banner connection has already been made,
+#'   supply it here. Otherwise, this function will prompt for logon credentials
+#'   for a one time use connection.
+#'
+#' @return a dataframe containing one row per person per address type with
+#'   corresponding address columns
+#' @export
+#' @import magrittr
+#'
+get_address_data <- function(pidm_vec, opt_banner_connection) {
+
+  # if a banner connection isn't supplied, create one
+  if (missing(opt_banner_connection)) {
+    bann_con <- msuopa::get_banner_conn()
+  } else {
+    bann_con <- opt_banner_connection
+  }
+
+  # get a lookup of max dates for each pidm and address type
+  spraddr_max_date <- dplyr::tbl(bann_con, "SPRADDR") %>%
+    dplyr::group_by(SPRADDR_PIDM, SPRADDR_ATYP_CODE) %>%
+    dplyr::summarize(max_date = max(SPRADDR_FROM_DATE,
+                                    na.rm = TRUE)) %>%
+    dplyr::filter(SPRADDR_ATYP_CODE %in% c("MA", "CA"),
+                  SPRADDR_PIDM %in% pidm_vec) %>%
+    dplyr::mutate("key" = paste0(SPRADDR_PIDM, SPRADDR_ATYP_CODE)) %>%
+    dplyr::select(key, max_date)
+
+
+  #filter the spraddr data to only include max dated addresses
+  spraddr_data <- dplyr::tbl(bann_con, "SPRADDR") %>%
+    dplyr::select(SPRADDR_PIDM,
+                  SPRADDR_ATYP_CODE,
+                  SPRADDR_FROM_DATE,
+                  SPRADDR_STREET_LINE1,
+                  SPRADDR_STREET_LINE2,
+                  SPRADDR_STREET_LINE3,
+                  SPRADDR_CITY,
+                  SPRADDR_STAT_CODE,
+                  SPRADDR_ZIP,
+                  SPRADDR_CNTY_CODE,
+                  SPRADDR_PHONE_AREA,
+                  SPRADDR_PHONE_NUMBER) %>%
+    dplyr::mutate("key" = paste0(SPRADDR_PIDM, SPRADDR_ATYP_CODE)) %>%
+    dplyr::left_join(spraddr_max_date, by = "key") %>%
+    dplyr::filter(SPRADDR_ATYP_CODE %in% c("MA", "CA"),
+                  SPRADDR_PIDM %in% pidm_vec,
+                  SPRADDR_FROM_DATE == max_date) %>%
+
+    dplyr::collect()
+  #
+  # spraddr_max_date$key <- paste0(spraddr_max_date$SPRADDR_PIDM,
+  #                                spraddr_max_date$SPRADDR_ATYP_CODE)
+  # spraddr_max_date <- spraddr_max_date %>%
+  #   dplyr::ungroup() %>%
+  #   dplyr::select(key, max_date)
+  #
+  # spraddr_data$key <- paste0(spraddr_data$SPRADDR_PIDM,
+  #                            spraddr_data$SPRADDR_ATYP_CODE)
+  #
+  # spraddr_data <- dplyr::left_join(spraddr_data,
+  #                                  spraddr_max_date,
+  #                                  by = "key") %>%
+  #   dplyr::filter(max_date == SPRADDR_FROM_DATE) %>%
+  #   dplyr::distinct(.keep_all = TRUE)
+  #
+  #
+  # return(spraddr_data)
+  return(spraddr_data)
+}
+
+
+
+
+#' get_addr_max_dates
+#'
+#' select only the most recent address of each type for each pidm. The banner
+#' table stores each address every entered into the system as a unique record.
+#'
+#' @param pidm_vec a vector containing pidms of the people who's addresses will
+#'   be analyzed
+#' @param opt_banner_connection an optional active banner connection object
+#'   typically derived from the \code{get_banner_conn} function. Useful for
+#'   minimizing the number of times that a password needs to be entered.
+#'
+#' @return return a dataframe containing the 'key' comprised of PIDM Address
+#'   Type and the corresponding max date all address records of that type and
+#'   person
+#'
+get_addr_max_dates <- function(pidm_vec, opt_banner_connection) {
+  # if a banner connection isn't supplied, create one
+  if (missing(opt_banner_connection)) {
+    bann_con <- msuopa::get_banner_conn()
+  } else {
+    bann_con <- opt_banner_connection
+  }
+
+  # get a lookup of max dates for each pidm and address type
+  spraddr_max_date <- dplyr::tbl(bann_con, "SPRADDR") %>%
+    dplyr::group_by(SPRADDR_PIDM, SPRADDR_ATYP_CODE) %>%
+    dplyr::summarize(max_date = max(SPRADDR_FROM_DATE,
+                                    na.rm = TRUE)) %>%
+    dplyr::filter(#SPRADDR_ATYP_CODE %in% c("MA", "CA"),
+      SPRADDR_PIDM %in% pidm_vec) %>%
+    dplyr::mutate("key" = paste0(SPRADDR_PIDM, SPRADDR_ATYP_CODE)) %>%
+    dplyr::select(key, max_date) %>%
+    dplyr::collect()
+
+  return(spraddr_max_date)
+}
+

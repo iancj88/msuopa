@@ -15,6 +15,6 @@ load_sql_qry(file_path, file_name)
 a string containing the sql query
 }
 \description{
-load a properly formatted sql query to be sent to an oracle db via RORacle or
-an access db via DBI
+load a properly formatted sql query from a plain text file to be sent to an
+oracle db via ROracle::dbSendQuery or an access db via DBI::dbSendQuery
 }
