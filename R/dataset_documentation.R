@@ -4,10 +4,12 @@
 #' For readable formatting, replace /n with actual new lines characters and
 #' then remove all instances of escape characters ('/'). Requires
 #' 'AS_OF_DATE_HERE' to be replaced with a valid character representation of
-#' a date in the form YYYY-MM-DD.
+#' a date in the form YYYY-MM-DD. Also requires JOB_STATUSES_HERE string to be
+#' replaced with a character vector comprised of atleast one value job status
+#' abbreviations i.e. 'A', 'B', 'L'.
 #'
 #' @source OPA Employee Access database
-"snapshot_sql_query"
+#"snapshot_sql_query"
 
 #' The EMR Organization Lookup table contains the crosswalk between organization
 #' number, name, and higher-level organization known as 'EMROrg' and 'VPOrg.
@@ -90,3 +92,22 @@
 #'   voluntary}}
 #'
 "term_code_lu"
+
+
+#' Number of working hours per month and per year for all fiscal years from
+#' 2000-2033 and for the primary employee types: Classified, Professional,
+#' Faculty (9 month), and Faculty (10 month)
+#' @source Max Thompson's email dated 2/22/17
+#' @format A dataframe with 34 rows and 15 variables: \describe{
+#'   \item{begin_date}{The first day of the fiscal year}
+#'   \item{end_date}{The last day of the fiscal year}
+#'   \item{FY}{the fiscal year}
+#'   \item{days_cls, days_prof, days_fac9, days_fac10}{The number of working
+#'   days for the type of employee in the given fiscal year}
+#'   \item{hours_cls, hours_prof, hours_fac9, hours_fac10}{The working hours per
+#'   pay period for the type of employee}
+#'   \item{hours_per_month_cls, hours_per_month_prof, hours_per_month_fac9,
+#'   hours_per_month_fac10}{The number of hours in each pay period for the
+#'   type of employee}}
+#'
+"FY_days_hours"

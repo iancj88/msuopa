@@ -20,7 +20,7 @@ get_banner_conn <- function() {
                                 username,
                                 pwd,
                                 dbname = "PROD")
-  pwd <- "*********************************"
+  rm(pwd)
   return(db_conn)
 }
 

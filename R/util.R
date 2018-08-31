@@ -4,7 +4,7 @@
 #' ending with *.R will be sourced.
 #'
 #' @param folder_path The folder path containing the R files. By default, uses
-#' the ./R/ folder contained in teh working directory
+#' the ./R/ folder contained in the working directory
 #'
 #' @return Success message will be printed to terminal
 #' @export
@@ -13,7 +13,7 @@ source_folder_files <- function(folder_path = "./R/") {
   file.sources <- list.files(path = folder_path,
                              pattern = "\\.R$",
                              full.names = TRUE)
-
+  #if zero files found i.e. if length = 0 (boolean interpretation)
   if (!length(file.sources)) {
     stop(simpleError(sprintf('No R Source files found')))
   }
@@ -28,9 +28,18 @@ source_folder_files <- function(folder_path = "./R/") {
 # my_query_mod <- gsub("AS_OF_DATE_HERE", "20171231", my_query)
 #' make_year_day_seq
 #'
-#' @param year an integer specifying the year of character dates
+
+
+#' make_year_day_seq
+#'
+#' create a character vector containing dates in the form "YYYY-MM-DD". Useful
+#' for incrementing banner queries by fixed dates.
+#'
+#' @param year a 4 digit integer specifying the year of character dates between
+#' 1900 and 2100
 #' @param by a string containing one of the following: "day", "week", "month",
-#' "quarter", "year" OR a number speficifying the frequency of the date sequence
+#' "quarter", "year" OR a number speficifying the day frequency of the date
+#' sequence
 #'
 #' @return a character vector containg dates in the form YYYY-MM-DD
 #' @export
@@ -66,7 +75,8 @@ make_year_day_seq <- function(year, by = "day") {
 #' fix_native_org_names
 #'
 #' This function overwrites certain Org Hierarchy values for oddly formatted
-#' departments in the all employees report.
+#' departments in the all employees report. Will require revision post ATS
+#' implementation.
 #'
 #' @param df a dataframe containing all employees data.
 #'
@@ -105,7 +115,7 @@ fix_native_org_names <- function(df) {
 #' compute_fiscal_year
 #'
 #' computes the fiscal year of a vector of dates based on the Montana State
-#' fiscal calendar (July 1 - June 30)
+#' fiscal calendar (July 1 - June 30).
 #'
 #' @param date the vector of dates from which to compute fiscal year
 #'
@@ -118,11 +128,14 @@ fix_native_org_names <- function(df) {
 #' compute_fiscal_year(dte_1)
 #' compute_fiscal_year(dte_2)
 compute_fiscal_year <- function(date) {
-
+  #handle NA values in the date vector
   qrtr <- data.table::quarter(date)
+  qrtr[is.na(qrtr)] <- 0
   third_fourth_quarter <- (qrtr > 2)
 
   date <- data.table::year(date)
+  date[is.na(date)] <- 1900
+
   date[third_fourth_quarter] <- date[third_fourth_quarter] + 1
 
   return(date)
@@ -154,8 +167,8 @@ rename_column <- function(df, old_name, new_name) {
 
 #' load_sql_qry
 #'
-#' load a properly formatted sql query to be sent to an oracle db via RORacle or
-#' an access db via DBI
+#' load a properly formatted sql query from a plain text file to be sent to an
+#' oracle db via ROracle::dbSendQuery or an access db via DBI::dbSendQuery
 #'
 #' @param file_path the full folder path containing the file
 #' @param file_name the full name of the file with extension
@@ -206,4 +219,35 @@ pad_gid <- function(gid_vec) {
   gid_vec <- sprintf("%09d", gid_numbers)
   return(gid_vec)
 }
+
+#' remove_na_cols
+#'
+#' remove columns from dataframe if they contain \emph{only} NA values
+#'
+#' @param df the dataframe or datatable from which to remove columns
+#'
+#' @return a datatable with NA columns removed
+#' @export
+#'
+remove_na_cols <- function(df) {
+  dt <- data.table::as.data.table(df)
+  dt <- dt[,which(unlist(purrr::map(dt, function(x)!all(is.na(x))))), with = F]
+  return(dt)
+}
+
+#' remove_na_rows
+#'
+#' remove columns from dataframe if they contain \emph{only} NA values
+#'
+#' @param df the dataframe or datatable from which to remove columns
+#'
+#' @return a datatable with NA columns removed
+#' @export
+#'
+remove_na_rows <- function(df) {
+  dt <- data.table::as.data.table(df)
+  dt <- dt[rowSums(!is.na(dt)) > 0,]
+  return(dt)
+}
+
 
