@@ -5,10 +5,10 @@
 \title{get_banner_snapshots}
 \usage{
 get_banner_snapshots(year, sql_file_name, by = "week", debug_date,
-  include_leave = FALSE)
+  include_leave = FALSE, opt_banner_conn)
 }
 \arguments{
-\item{year}{year overwhich snapshots will be pulled. For one date only, see
+\item{year}{calendar year overwhich snapshots will be pulled. For one date only, see
 \code{debug_date}}
 
 \item{sql_file_name}{optional file name and path if an alternative sql query
@@ -24,6 +24,9 @@ parameters}
 
 \item{include_leave}{an optional boolean value indicating whether or not to
 include LWOP and LWOP/WB (with Benefits) Jobs in the snapshot}
+
+\item{opt_banner_conn}{an active banner connection object typically derived
+from \code{get_banner_conn()}. If not provided will create a temp connection}
 }
 \value{
 a list of snapshot query returns. The names of the list items specify

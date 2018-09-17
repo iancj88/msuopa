@@ -40,7 +40,10 @@ write_report <- function(df,
   } else sheetName <- opt_sheetName
 
   if (missing(opt_header_title)) {
-    opt_header_title <- sheetName
+    header_title <- sheetName
+  }
+  else {
+    header_title <- opt_header_title
   }
 
   # this writes the csv file obviously

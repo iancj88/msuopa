@@ -115,7 +115,7 @@ get_all_ee <- function(folderpath,
 
   # check that the input filepath leads to a valid directory
   if (missing(folderpath)) {
-    folderpath <- "X:/Employees/All EEs Reports/csv_src/"
+    folderpath <- "X:/Employees/All EEs Reports/rds_src/"
   }
   stopifnot(dir.exists(folderpath))
 
@@ -123,17 +123,23 @@ get_all_ee <- function(folderpath,
   stopifnot(length(list.files(path = folderpath)) > 0)
 
   # check that the directory contains a .txt file for parsing
-  file_names_only <- list.files(folderpath, full.names = FALSE)
-  stopifnot(sum(grepl(".txt", file_names_only)) > 0)
+  csv_fpath <- "X:/Employees/All EEs Reports/csv_src/"
+  csv_names_only <- list.files(csv_fpath, full.names = FALSE)
+  if (sum(grepl(".txt", csv_names_only)) > 0) {
+    convert_allee_txt_rds(folder_path = csv_fpath)
+  }
 
+
+  folderpath <- "X:/Employees/All EEs Reports/rds_src/"
+  file_names_only <- list.files(folderpath, full.names = FALSE)
   # get the full paths to the files in the directory so that each can be
-  # fed into the csv reader one a time.
+  # fed into the rds reader one a time.
   file_names_paths <- list.files(folderpath, full.names = TRUE)
 
-  # only keep those files that are .txt
-  file_names_paths <- file_names_paths[grepl(".txt",
+  # only keep those files that are .rds
+  file_names_paths <- file_names_paths[grepl(".rds",
                                              file_names_only)]
-  file_names_only <- file_names_only[grepl(".txt",
+  file_names_only <- file_names_only[grepl(".rds",
                                            file_names_only)]
 
   # if only the most recent all ee file is to be loaded (for performance
@@ -157,10 +163,8 @@ get_all_ee <- function(folderpath,
   }
 
   # use data table fread (because it is fast) to load the csvs
-  loaded_data <- mapply(fread_allee_csv,
-                        path = file_names_paths,
-                        name = file_names_only,
-                        SIMPLIFY = FALSE)
+
+  loaded_data <- lapply(file_names_paths, readRDS)
 
   # combine the loaded data and change to dataframe
   loaded_data <- dplyr::bind_rows(loaded_data)
@@ -188,12 +192,7 @@ get_all_ee <- function(folderpath,
   }
 
 
-  # Format the date columns out of their screwy dd-MMM-yy format
-  loaded_data <- format_allEE_dates(loaded_data)
-  loaded_data <- fix_native_org_names(loaded_data)
-  if (supplement == TRUE) {
-    loaded_data <- supplement_all_ee(loaded_data)
-  }
+
 
 
   # if only a subset of the data is needed filter by the date
@@ -206,6 +205,39 @@ get_all_ee <- function(folderpath,
   # }
 
   return(loaded_data)
+}
+
+convert_allee_txt_rds <- function(folder_path) {
+  #ensure working with only txt files
+  file_names_only <- list.files(folder_path, full.names = FALSE)
+  full_path <- list.files(folder_path, full.names = TRUE)
+
+  if (sum(grepl(".txt", file_names_only)) > 0) {
+    full_path <- full_path[grepl(".txt", file_names_only)]
+    file_names_only <- file_names_only[grepl(".txt", file_names_only)]
+
+    dfs <- mapply(fread_allee_csv,
+                  path = full_path,
+                  name = file_names_only,
+                  SIMPLIFY = FALSE)
+
+    output_paths <- sapply(file_names_only,
+                           function(x) paste0("X:/Employees/All EEs Reports/rds_src/",
+                           x))
+
+    output_paths <- stringr::str_replace(output_paths, ".txt", ".rds")
+
+    # Format the date columns out of their screwy dd-MMM-yy format
+    loaded_data <- lapply(dfs, format_allEE_dates)
+    loaded_data <- lapply(dfs, fix_native_org_names)
+    loaded_data <- lapply(dfs, supplement_all_ee)
+
+
+    mapply(saveRDS, object = dfs, file = output_paths)
+
+    invisible(lapply(full_path, file.remove))
+  }
+  return(invisible(NULL))
 }
 
 #' allee_dates_from_fnames
@@ -874,7 +906,9 @@ get_pidm_gid_lu <- function(opt_banner_conn, opt_pidm_vec, opt_gid_vec) {
 #' @export
 #'
 get_payroll_data <- function(opt_fpath,
-                             opt_fpattern) {
+                             opt_fpattern,
+                             opt_start_date,
+                             opt_end_date) {
   if (missing(opt_fpath)) {
     fpath <- "X:/Employees/Payroll Earnings & Labor Distrubtion by Employee/"
   } else {
@@ -889,6 +923,45 @@ get_payroll_data <- function(opt_fpath,
   file_list <- list.files(fpath)
   file_path_list <- list.files(fpath, full.names = TRUE)
 
+  # compute the true dates corresponding to the time covered by the payrolls.
+  # This is used to filter the files to be loaded (for quicker compute times) in
+  # addition to adding a true year/month/date column to the final compiled
+  # dataframes.
+  #
+  #   add the year and payroll number as seperate columns. Currenly
+  #   data is stored in the fname column in character type with the format
+  #   "YYYYPR##"
+  f_year <- as.numeric(substr(file_list,1,4))
+  f_pr <- as.numeric(substr(file_list,7,8))
+
+  file_df <- data.frame(file_list, file_path_list, f_year, f_pr,
+                        stringsAsFactors = FALSE)
+
+  file_df$true_year <- NA
+  file_df$true_month <- NA
+  file_df[f_pr == 1, "true_year"] <- file_df[f_pr == 1, "f_year"] - 1
+  file_df[!f_pr == 1, "true_year"] <- file_df[!f_pr == 1, "f_year"]
+
+  file_df[f_pr == 1, "true_month"] <- 12
+  file_df[!f_pr == 1, "true_month"] <- file_df[!f_pr == 1, "f_pr"] - 1
+
+  file_df$true_date <- as.POSIXct(paste0(file_df$true_year,
+                                         "-",
+                                         file_df$true_month,
+                                         "-01"))
+
+
+  if (!missing(opt_start_date)) {
+    file_df <- file_df[file_df$true_date >= opt_start_date,]
+  } else {}
+
+  if (!missing(opt_end_date)) {
+    file_df <- file_df[file_df$true_date <= opt_end_date,]
+  } else {}
+
+  files_to_load <- unlist(file_df$file_path_list)
+  file_names <- unlist(file_df$file_list)
+
   col_classes <- list(character = c("GID",
                                     "Name",
                                     "Position Number",
@@ -902,7 +975,7 @@ get_payroll_data <- function(opt_fpath,
                                   "Amount",
                                   "Percent"))
 
-  output <- lapply(file_path_list,
+  output <- lapply(files_to_load,
                    FUN = data.table::fread,
                    sep = ";",
                    stringsAsFactors = FALSE,
@@ -912,7 +985,7 @@ get_payroll_data <- function(opt_fpath,
 
   names(output) <- gsub(pattern = ".txt",
                         replacement = "",
-                        x = file_list)
+                        x = file_names)
 
   output <- data.table::rbindlist(output,
                                   idcol = "fname")
@@ -926,6 +999,8 @@ get_payroll_data <- function(opt_fpath,
   # 2017
   output[PR == 1, `True Month` := 12][PR != 1, `True Month` := PR - 1]
   output[PR == 1, `True Year` := `PR Year` - 1][PR != 1, `True Year` := `PR Year`]
+
+  output[`True Month` >= 7, `fy` := `True Year` + 1][!`True Month` >= 7, `fy` := `True Year`]
 
   output <- data.table::setDF(output)
 

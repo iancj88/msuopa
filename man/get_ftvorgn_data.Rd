@@ -4,7 +4,11 @@
 \alias{get_ftvorgn_data}
 \title{get_ftvorgn_data}
 \usage{
-get_ftvorgn_data()
+get_ftvorgn_data(opt_banner_conn)
+}
+\arguments{
+\item{opt_banner_conn}{an active banner connection object typically derived
+from \code{get_banner_conn()}. If not provided will create a temp connection}
 }
 \value{
 a dataframe containing all FTVORGN table variables. Depreciated rows

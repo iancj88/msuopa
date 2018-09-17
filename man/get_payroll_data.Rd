@@ -4,7 +4,7 @@
 \alias{get_payroll_data}
 \title{get_payroll_data}
 \usage{
-get_payroll_data(opt_fpath, opt_fpattern)
+get_payroll_data(opt_fpath, opt_fpattern, opt_start_date, opt_end_date)
 }
 \arguments{
 \item{opt_fpath}{an optional parameter if the payroll files are located in a non-default location}

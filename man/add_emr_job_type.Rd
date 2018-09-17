@@ -5,7 +5,8 @@
 \title{add_emr_job_type}
 \usage{
 add_emr_job_type(df, position_number_col_name = "Position Number",
-  suffix_col_name = "Suffix", mus_col_name = "MUS")
+  suffix_col_name = "Suffix", mus_col_name = "MUS",
+  ecls_col_name = "PEAEMPL ECLS")
 }
 \arguments{
 \item{df}{the dataframe containing the necessary columns and to which the new
